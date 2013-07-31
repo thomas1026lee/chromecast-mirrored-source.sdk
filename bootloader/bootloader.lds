@@ -17,10 +17,10 @@
  *******************************************************************************/
 /*
  * bootloader memory layout:
- *  0x00600000 - 0x0067C000  496kB vt, drm_img, custkey, bootloader preloaded buffer
- *  0x0067C000 - 0x00680000   16kB 16kB for level 1 translation table base
- *  0x00680000 - 0x009C0000 3328kB code, rodata, data, bss, heap
- *  0x009C0000 - 0x00A00000  256kB stack
+ *  0x00100000 - 0x0017C000  496kB vt, drm_img, custkey, bootloader preloaded buffer
+ *  0x0017C000 - 0x00180000   16kB 16kB for level 1 translation table base
+ *  0x00180000 - 0x004C0000 3328kB code, rodata, data, bss, heap
+ *  0x004C0000 - 0x00500000  256kB stack
  *
  *******************************************************************************/
 
@@ -29,14 +29,14 @@ OUTPUT_ARCH(arm)
 ENTRY(BootLoaderEntry)
 SECTIONS
 {
-	. = 0x00600000;
+	. = 0x00100000;
 	__preload_buf_start = .;
 
-	. = 0x00680000 - 0x4000;
+	. = 0x00180000 - 0x4000;
 	. = ALIGN(0x4000);
 	__ttb_base_start = .;
 
-	. = 0x00680000;
+	. = 0x00180000;
 	. = ALIGN(4);
 	.text :
 	{
@@ -66,10 +66,10 @@ SECTIONS
 	. = ALIGN(8);
 	__heap_start = .;
 
-	. = 0x00A00000 - 0x00040000;
+	. = 0x00500000 - 0x00040000;
 	__heap_end = .;
 
-	. = 0x00A00000;
+	. = 0x00500000;
 	. = ALIGN(8);
 	__stack_start = .;
 

@@ -127,10 +127,11 @@ enum sm_ldo_ctrl_vout_sel_e {
 
 #define FTS_KEY_MACADDR			"macaddr"
 #define FTS_WIFI_MFG_MODE "wifi_mfg_mode"
+#define FTS_DEVICE_CFGED  "device_configured"
 
 #define BOOTLOADER_COMMAND_KEY		"bootloader.command"
 #define ANDROID_CRASH_COUNTER_KEY	"crashcounter.android"
-#define MAX_CRASH_COUNT                 3
+#define MAX_CRASH_COUNT                 5
 #define BOOTMODE_NORMAL                 0
 #define BOOTMODE_RECOVERY               1
 #define BOOTMODE_BOOTUSB                2
@@ -514,10 +515,16 @@ int check_android_recovery_mode(void)
 	}
 #ifndef DISABLE_CRASH_COUNTER
 	if (crash_counter > MAX_CRASH_COUNT) {
-		if (!flash_ts_get_int("crashcounter-disable", 0)) {
-            /* TODO(kolla): determine if we need to send a special message
-             * to recovery to recover from crash.
-             */
+		char dev_cfged[64] = {0,};
+		flash_ts_get(FTS_DEVICE_CFGED, dev_cfged, sizeof(dev_cfged));
+		/* Attempt to boot in to recovery after consecutive crashes
+		 * only if the device is configured at least once.
+		 */
+		if (!flash_ts_get_int("crashcounter-disable", 0) &&
+			!strcmp("true", dev_cfged)) {
+			/* TODO(kolla): determine if we need to send a special message
+			 * to recovery to recover from crash.
+			 */
 			return BOOTMODE_RECOVERY;
 		}
 	}
@@ -745,6 +752,11 @@ static int load_android_image(int bootmode, int boot_src)
 					  cpu_img_siz,
 					  (unsigned int)k_buff);
 #endif //CFG_BOARD_NAME
+	if(ret) {
+		printf("ERROR: Verify image failed! ret=%d\n", ret);
+		return -1;
+	}
+
 	memcpy(&Mkbootimg_hdr, k_buff, sizeof(Mkbootimg_hdr));
 
 	if (strncmp(Mkbootimg_hdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
