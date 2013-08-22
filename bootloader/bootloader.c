@@ -81,6 +81,7 @@
 #define KEY_IDX_INVALID       0xFF
 
 #define MAX_ANDROID_IMG_SIZE (32 * 1024 * 1024)
+#define MIN_ANDROID_IMG_SIZE (1 * 1024 * 1024)
 #define MAX_LOGO_FRM_SIZE (4 * 1024 * 1024)
 #define ANDROID_IMG_BUF (BOARD_MEM_SIZE - MAX_ANDROID_IMG_SIZE)
 #define LOGO_FRM_BUF (ANDROID_IMG_BUF - MAX_LOGO_FRM_SIZE)
@@ -676,11 +677,16 @@ static int load_android_image(int bootmode, int boot_src)
 	cpu_img_siz = *((unsigned int *)(cpu_img_hdr + CPU_IMG_OFFS_IMGSIZ));
 	cpu_img_siz = get_aligned(cpu_img_siz, 16);
 	cpu_img_siz += CPU_IMG_OFFS_IMGSTA;
-	if (cpu_img_siz > MAX_ANDROID_IMG_SIZE){
-		debug_printf("ERROR: aligned CPU img_siz %u is larger than max img_siz\n",
+	/* Add min size check to be safe */
+	if (cpu_img_siz > MAX_ANDROID_IMG_SIZE || cpu_img_siz < MIN_ANDROID_IMG_SIZE) {
+		debug_printf("ERROR: aligned CPU img_siz %u is invalid\n",
 					 cpu_img_siz);
 		return -1;
 	}
+
+	/* Wipe the scratch memory first to make sure nothing */
+	/* is present from the last boot attempt. */
+	memset(k_buff, 0, MAX_ANDROID_IMG_SIZE);
 
 	if (boot_src == BOOT_SRC_USB){
 #ifdef CONFIG_USB
@@ -699,17 +705,33 @@ static int load_android_image(int bootmode, int boot_src)
 		  return -1;
 		}
 #endif //CFG_BOARD_NAME
+
+		/* Avoid re-reading the first block to prevent */
+		/* security hacks */
+		memcpy(k_buff, cpu_img_hdr, sizeof(cpu_img_hdr));
+
 		blk_cnt = (cpu_img_siz + USB_BLOCK_SIZ - 1)/USB_BLOCK_SIZ;
 		/* Always read from first USB storage device */
 		ret = usb_stor_read(0,
-							android_start,
-							blk_cnt,
-							k_buff);
-		if (ret != blk_cnt){
+							(android_start + 1),
+							(blk_cnt - 1),
+							(k_buff + USB_BLOCK_SIZ));
+		if (ret != (blk_cnt - 1)){
 			lgpl_printf("ERROR: Failed to read CPU image blk_cnt %d ret %d\n",
-						blk_cnt, ret);
+						(blk_cnt - 1), ret);
 			return -1;
 		}
+
+		/* There can be trailing bytes beyond the end of the image */
+		/* due to rounding up to USB_BLOCK_SIZ (and which would */
+		/* otherwise be unverified).  Might as well zero all remaining */
+		/* memory to be safer. */
+		int trailing_bytes = MAX_ANDROID_IMG_SIZE - cpu_img_siz;
+		if (trailing_bytes > 0) {
+			lgpl_printf("NOTE: %x trailing bytes zeroed\n", trailing_bytes);
+			memset(k_buff + cpu_img_siz, 0, trailing_bytes);
+		}
+
 #endif //CONFIG_USB
 	}else{
 		ret = nand_read_generic(android_start,
