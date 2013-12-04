@@ -13842,7 +13842,7 @@ with_gnu_ld=$lt_cv_prog_gnu_ld
       # Commands to make compiler produce verbose output that lists
       # what "hidden" libraries, object files and flags are used when
       # linking a shared library.
-      output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
+      output_verbose_link_cmd='$CC -shared $CFLAGS $LDFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
 
     else
       GXX=no
@@ -14907,7 +14907,7 @@ if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   for p in `eval "$output_verbose_link_cmd"`; do
     case ${prev}${p} in
 
-    -L* | -R* | -l*)
+    -L* | -R* | -l* | -B*)
        # Some compilers place space between "-{L,R}" and the path.
        # Remove the space.
        if test $p = "-L" ||

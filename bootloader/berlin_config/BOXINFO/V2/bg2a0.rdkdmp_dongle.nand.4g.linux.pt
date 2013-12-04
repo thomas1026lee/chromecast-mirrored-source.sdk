@@ -1,0 +1,15 @@
+#partition table, works for block_size >= 512kB, chip_size >= 2GB
+#Size   Name               PlaneNum  FileSystem
+1B      block0             1                     # nand attritude
+8B      bootloader         1                     # each < 512kB
+11B     @env               1
+32M     @sysconf           1
+32M     factory_setting    1
+32M     bootimgs           1                     # ~5MB
+32M     @bootimgs-B        1                     # backup of bootimgs
+400M    rootfs             1        yaffs
+320M    app                1        yaffs
+320M    @app-B             1        yaffs        # backup of app
+64M     localstorage       1        yaffs
+-       @BDlocalstorage    1        yaffs
+8B      @bbt               1

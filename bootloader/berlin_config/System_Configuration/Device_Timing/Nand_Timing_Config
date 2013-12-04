@@ -1,0 +1,67 @@
+#!/bin/sh
+#	This configuration file is used to customize NAND device related timing.
+#	For the detailed description for each parameter, please refer to 
+#	NAND controller manual
+
+#	Address to Write Data Delay. bits: NDTR0CS0: 31:27
+NDTR0CS0_TADL=16
+
+#	Select Read Counter	bits: NDTR0CS0: 26
+NDTR0CS0_SELCNTR=1
+
+#	Read Strobe Count Delay:	bits: NDTR0CS0:25:22
+NDTR0CS0_RD_CNT_DEL=0
+
+#	Enable Signal Hold Time, valid value:0-7, Hold time = tCH+1.
+NDTR0CS0_TCH=0
+
+#	Enable Signal Setup Time, valie value:0-7, Setup time = tCS+1.
+NDTR0CS0_TCS=2
+
+#	ND_nWE high duration,	valid value: 0-7, ND_nWE high duration = tWH+1 
+#	for a series of write pulses. For the last
+#	write pulse of a command , the duration is max(tWH,tCH)+1.
+#
+NDTR0CS0_TWH=1
+
+#	ND_nWE pulse width,	valid value: 0-7, ND_nWE pulse width = tWP+1.
+NDTR0CS0_TWP=2
+
+#	Extended tRP. bits:	NDTR0CS0:6
+NDTR0CS0_ETRP=0
+
+
+#	ND_nRE high duration, valid value: 0-7, ND_nRE high duration = tRH+1.
+NDTR0CS0_TRH=1
+
+#	ND_nRE pulse width, valid value: 0-7, ND_nRE pulse width = {eTRP, tRP} +1.
+NDTR0CS0_TRP=2
+
+#	ND_nWE high to ND_nRE Low for Read, valid value: 0-65535
+#	Delay = (tCH + 1) + (tR+2)
+NDTR1CS0_TR=3117
+
+#	Wait_Mode, This bit determines how the information in this register is used to determine
+#	state machine transitions on read operations. bits: NDTR1CS0:15
+NDTR1CS0_WAIT_MODE=1
+
+#	Prescale tR, bits: NDTR1CS0:14
+#	0 The tR time value specified in this register is the number of DFC clocks
+#	to wait to sample tR (in Wait_Mode) or to simply wait (when not in
+#	Wait_Mode.
+#	1 The tR time value specified in this register is 1/16 of the number of
+#	DFC clocks i.e. the tR value is prescaled by 16.
+#
+NDTR1CS0_PRESCALE_TR=0
+
+#	ND_nWE High to ND_nRE Low for a Read Status, valid value: 0-15
+#	Delay = max(tAR, max(0, tWHR - max(tWH, tCH)))
+NDTR1CS0_TWHR=10
+
+#	ND_ALE Low to ND_nRE Low Delay, valid value: 0-15
+#	Delay = max(tAR, max(0, tWHR - max(tWH, tCH)))+2
+NDTR1CS0_TAR=2
+
+NDTR0CS0=0x8ccb1a13
+NDTR1CS0=0x300080c4
+NDREDEL=0

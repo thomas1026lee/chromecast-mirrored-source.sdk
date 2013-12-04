@@ -1,0 +1,93 @@
+#!/bin/bash
+
+#	Parameter	Example:
+#	Parameter Name:		type	bits
+#	Note
+#	Definition=Value
+
+#	MCTRLDUAL_COMMCONFIG_CL_SEL:			%unsigned	4
+#	CAS latency Selection
+#	For SDR/MSDR/MDDR/DDR/DDR2:
+#	4'b0010: cas latency = 3 cycles
+#	4'b0011: cas latency = 4 cycles
+#	4'b0100: cas latency = 5 cycles (default)
+#	4'b0101: cas latency = 6 cycles
+#	4'b0110: cas latency = 7 cycles
+#	For DDR3:
+#	4'b0010: cas latency = 5 cycles
+#	4'b0100: cas latency = 6 cycles
+#	4'b0110: cas latency = 7 cycles
+#	4'b1000: cas latency = 8 cycles
+#	4'b1010: cas_latency = 9 cycles
+#	4'b1100: cas_latency = 10 cycles
+#	4'b1110: cas_latency = 11 cycles
+#	others: reserved
+MCTRLDUAL_COMMCONFIG_CL_SEL=4
+
+
+#	MCTRLDUAL_TIMING_REG1_INIT_TRAS:		%unsigned	8
+#	tRAS (Active-to-Precharge Delay)-1 
+#	For example, init_tras = 7 means Active command to Precharge 
+#	command has minimal 8 cycles delay 
+MCTRLDUAL_TIMING_REG1_INIT_TRAS=0xF
+
+
+#	MCTRLDUAL_TIMING_REG1_INIT_TRFC			%unsigned	8
+#	tRFC-1	
+MCTRLDUAL_TIMING_REG1_INIT_TRFC=0x32
+
+#	MCTRLDUAL_TIMING_REG1_INIT_TRC			%unsigned	8
+#	tRC-1
+MCTRLDUAL_TIMING_REG1_INIT_TRC=0x15
+
+#	MCTRLDUAL_TIMING_REG1_INIT_REFC			%unsigned	8
+#	tREFC-1
+MCTRLDUAL_TIMING_REG1_INIT_REFC=0x3c
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TRP			%unsigned	4
+#	tRP-1
+MCTRLDUAL_TIMING_REG2_INIT_TRP=0x5
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TRRD			%unsigned   4
+#	tRRD-1
+MCTRLDUAL_TIMING_REG2_INIT_TRRD=3
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TRCD			%unsigned   4
+#	tRCD-1
+MCTRLDUAL_TIMING_REG2_INIT_TRCD=4
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TWR			%unsigned   4
+#	tWR-1
+MCTRLDUAL_TIMING_REG2_INIT_TWR=4
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TRTP			%unsigned   4
+#	tRTP-1
+MCTRLDUAL_TIMING_REG2_INIT_TRTP=2
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TWTR			%unsigned   4
+#	tWTR-1 
+MCTRLDUAL_TIMING_REG2_INIT_TWTR=3
+
+#	MCTRLDUAL_TIMING_REG2_INIT_TMRD			%unsigned   4
+#	tMRD-1
+MCTRLDUAL_TIMING_REG2_INIT_TMRD=3
+
+
+#	MCTRLDUAL_TIMING_REG3_INIT_TXSNR		%unsigned   8
+#	tXSNR-1
+MCTRLDUAL_TIMING_REG3_INIT_TXSNR=0x36
+
+#	MCTRLDUAL_TIMING_REG3_INIT_TICK			%unsigned   8
+#	power-up CKE to PRECHARGE-ALL delay cycles
+#	400ns minimal
+#	Only valid for DDR2 or DDR3 devices
+MCTRLDUAL_TIMING_REG3_INIT_TICK=0x4f
+
+#	MCTRLDUAL_TIMING_REG3_INIT_TFAW			%unsigned   8
+#	tFAW-1
+MCTRLDUAL_TIMING_REG3_INIT_TFAW=0x10
+
+#	MCTRLDUAL_TIMING_REG3_INIT_TRFCMAX		%unsigned   8
+#	tRFCMAX-1
+MCTRLDUAL_TIMING_REG3_INIT_TRFCMAX=0x6c
+

@@ -1,0 +1,209 @@
+#!/bin/sh
+
+IMAGES_OUTPUT_DIR=../../Release_image
+
+#	Partition table path
+#	  For MV88DE3010_Tools, use cfg files under BOXINFO
+#		i.e. BOXINFO/parttable.cfg for classic linux platform
+#			 BOXINFO/parttable.android.cfg for android platform
+#	  For MV88DE3010_Tools_v2, use cfg files under BOXINFO/V2
+#		i.e. BOXINFO/V2/normal.cfg for classic linux platform
+#			 BOXINFO/V2/android.cfg for android platform
+PARTITION_TABLE_PATH=BOXINFO/V2/bg2a0.rdkdmp_dongle.nand.4g.linux.pt
+
+PLATFORM=bg2cd_eureka_evt
+SYSTEM_CONFIGURATION_PATH=System_Configuration/
+PLATFORM_INFO=System_Configuration/Platform_Info/bg2cd_eureka_evt/pinmux_setting.h
+
+
+#	Cross Compiler Prefix
+#
+#	CROSS_COMPILE is used to build sys_init/bootloader/u-boot without libc,
+#	can be
+#		- Marvell Tool Chain:
+#			arm-marvell-eabi-
+#			arm-marvell-linux-gnueabi-
+#		- Google Tool Chain:
+#			arm-unknown-eabi-
+#			arm-unknown-linux-gnueabi-
+#	APP_CROSS_COMPILE is used to build applications with libc, can be
+#		- Marvell Tool Chain:
+#			arm-marvell-linux-gnueabi-
+#		- Google Tool Chain:
+#			arm-unknown-linux-gnueabi-
+#	If it's not set, then
+#		CROSS_COMPILE=arm-marvell-eabi-
+#		APP_CROSS_COMPILE=arm-marvell-linux-gnueabi-
+CROSS_COMPILE=arm-unknown-linux-gnueabi-
+APP_CROSS_COMPILE=arm-unknown-linux-gnueabi-
+
+
+#	NAND flash configuration
+#	The format should be: $pagesize_$oobsize_$pagesperblock_$chipsize
+#		and size is calculated in bytes.
+#	For example:
+#		for K9G8GXXX, 2048_64_128_1073741824
+#		for K9G8G08U0M, 4096_128_128_2147483648
+#		for K9GAG08U0E, 8192_128_128_2147483648
+#		for K9GBG08U0A, 8192_640_128_4294967296
+#		for H27UBG8T2A, 8192_448_256_4294967296
+#		for TC58NVG4D2HTA00, 8192_640_128_2147483648
+#		for MT29F16G08CBACA, 4096_224_256_2147483648
+#EMMC configuration, also use FLASH_TYPE
+#       for 2G EMMC, 512_128_1024_2147483648
+#       for 4G EMMC, 512_128_1024_3959422976
+# K9GAG08U0E
+#FLASH_TYPE=8192_128_128_2147483648
+
+# K9GBG08U0A
+#FLASH_TYPE=8192_640_128_4294967296
+
+# MT29F16G08CBACA
+FLASH_TYPE=4096_224_256_2147483648
+
+# TC58NVG4D2HTA00
+#FLASH_TYPE=8192_640_128_2147483648
+
+
+#
+# randomizer requirement
+#		y for K9GBG08U0A
+#		n for other devices
+#
+RANDOMIZER=y
+
+#
+# ECC strength per 2k page for NAND flash.
+#	K9GAG08U0M	16
+#	K9G8G08U0M	16
+#	K9G8G08U0E	48
+#	K9GBG08U0A	48
+#	MT29F16G08CBACA	48
+ECC_STRENGTH=48
+
+#
+# NAND Flash Ctontroller (NFC) Clock Setting
+#	266 for 266MHz (default)
+#	400 for 400MHz
+#
+NFCECCCLK=400
+
+#	Typical MEMORY_MAP_OPTION are 88_68_356,
+MEMORY_MAP_OPTION=88_68_356
+MEMORY_SIZE=512M
+
+#
+# CHIP Type: BG2, BG2CT, BG2CD, BG3
+#
+BERLIN_CHIP=BG2CD
+
+#
+#CPU type Z1 Z2 A0 A1
+#
+CPU_TYPE=A0
+
+#
+#CPUPLL: 600, 725, 800
+#
+CPUPLL=725
+MEMPLL=1200
+SYSPLL=600
+
+#	SYS_CLOCK_SETTING could be referred in MV88DE3010_Tools_v2/Scripts/supportedsettings.cfg
+#		It's a simplified designation of the combination of
+#			CPU0CLK, CPU1CLK, DDRCLK, and VSCOPECLKS.
+SYS_CLOCK_SETTING=2
+
+#	This option is for bootloader.
+#	This option is to indicate which storage system are using
+#	VALID BOOT_TYPE:	EMMC_BOOT or NAND_BOOT
+BOOT_TYPE=NAND_BOOT
+
+BOX_PRODUCT_RELEASE=n
+CPU_IMAGE_ENCRYPT=y
+CUST_KEY_IMAGE=Cust_Key/CUSTOMER_KEY.store
+CUST_SELFKEY_IMAGE=Cust_Key/CUSTOMER_SELF_KEYS.bin
+KEY_INJECTION_FLOW_ENABLE=0
+PRODUCTION_CHIP=0
+ROM_KEY_DISABLE=0
+OTP_RSA_KEY_FILE_NAME=Cust_Key/IMG_KEYS.bin
+
+#	NAND_DEBUG
+#	If NAND_DEBUG = 1; user need to input JTAG password while WARM UP.
+#	This option is for debug purpose. Developers can connect to Berlin using
+#	ICE if system is halt or goes fleet.
+NAND_DEBUG=0
+
+#
+# PV compensation.
+# Valid value: PWM ONEWIRE
+#
+PV_COMP=ONEWIRE
+
+#	CPU0 Image related configuration parameters
+CPU0_IMAGE_ACTIVE=1
+CPU0_IMAGE_PATH=CPU0_Image/linux.bin
+CPU0_IMAGE_FORMAT=binary
+CPU0_IMAGE_ENCRYPTION=y
+#	CPU0_LINUX_PARAM_ADDR
+CPU0_LINUX_PARAM_ADDR=0x00400000
+#	CPU0_START_ADDR is only valid for BG2
+CPU0_START_ADDR=0x01008000
+
+
+#
+# define the boot arguments
+#
+# For GTV,
+#       LINUX_PARAM_COMMON_PART         is used for common part of both normal boot and recorvery boot
+#       LINUX_PARAM_NORMAL_BOOT_PART    is used for normal boot, the final bootargs will combine
+#                                       LINUX_PARAM_NORMAL_BOOT_PART + LINUX_PARAM_COMMON_PART + PartitionTable
+#       LINUX_PARAM_RECOVERY_BOOT_PART  is used for recovery boot, the final bootargs will combile
+#                                       LINUX_PARAM_RECOVERY_BOOT_PART + LINUX_PARAM_COMMON_PART + PartitionTable
+#
+# For not GTV,
+#       LINUX_PARAM_COMMON_PART         is used for the bootargs except PartitionTable
+#
+#         it's only used for MV88DE3010_Tools_v2
+#
+#         root_part_name is the partition name for root file system partition,
+#         it should be compatible with definitions inside PARTITION_TABLE_PATH
+#         Here's an example for android:
+#               LINUX_PARAM_COMMON_PART="sata_reset_done nfc_shared androidboot.console=ttyS0 console=ttyS0,115200 root=/dev/mtdblock5 rootfstype=yaffs2 ro root_part_name=system init=/init"
+#         Here's an example for classic linux:
+#               LINUX_PARAM_COMMON_PART="sata_reset_done nfc_shared console=ttyS0,115200 root=/dev/mtdblock5 rootfstype=yaffs2 ro root_part_name=rootfs init=/bin/srvd"
+LINUX_PARAM_COMMON_PART="console=ttyS0,115200 root=/dev/mtdblock5 rootfstype=yaffs2 ro root_part_name=rootfs init=/sbin/init"
+LINUX_PARAM_NORMAL_BOOT_PART=""
+LINUX_PARAM_RECOVERY_BOOT_PART=""
+
+#	CPU1 Image related configuration parameters for ELF format
+CPU1_IMAGE_ACTIVE=1
+CPU1_IMAGE_PATH=CPU1_Image/PE_CPU1_Image
+CPU1_IMAGE_FORMAT=ELF
+CPU1_IMAGE_ENCRYPTION=y
+CPU1_IMAGE_COMPRESSION=y
+
+#	CPU1 Image related configuration parameters for binary format
+#CPU1_IMAGE_ACTIVE=1
+#CPU1_IMAGE_PATH=CPU1_Image/PE_CPU1_Image.lzo.en.bin
+#CPU1_IMAGE_FORMAT=lzo.en.bin
+#CPU1_IMAGE_ENCRYPTION=n
+#CPU1_IMAGE_COMPRESSION=n
+
+#	SM Image related configuration parameters
+SM_IMAGE_ACTIVE=0
+SM_IMAGE_PATH=SM_Image/sm.bin
+SM_IMAGE_FORMAT=binary
+SM_IMAGE_ENCRYPTION=y
+
+#	rootfs directory name
+ROOTFS_DIR=rootfs_linux_google
+
+#	online upgrade related
+#		OU_SCRIPT_PATH stores OU command
+#			default=BOXINFO/online_upgrade/ou_script
+#		GEN_OUIMG_SCRIPT_PATH stores scripts to generate online upgrade image
+#			default=BOXINFO/online_upgrade/gen_ouimg.sh
+OU_SCRIPT_PATH=BOXINFO/online_upgrade/ou_script
+GEN_OUIMG_SCRIPT_PATH=BOXINFO/online_upgrade/gen_ouimg.sh
+SUBIMG_CONFIG_PATH=BOXINFO/online_upgrade/subimg.cfg

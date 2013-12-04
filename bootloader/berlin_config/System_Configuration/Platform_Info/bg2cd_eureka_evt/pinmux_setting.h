@@ -1,0 +1,142 @@
+//
+// pinmux settings for Marvell BDP
+//
+#define BOARD_TYPE	"DONGLE"
+#define CHIP_VERSION	"BG2CD"
+
+//
+//	PINMUX setting pre-definitions.  DO NOT TOUCH THIS DEFINITIONS
+//
+#define G0_MODE0_I_TDI_TMS			0
+#define G0_MODE1_IO_GPIO17_18			1
+#define G0_MODE2_O_FE_LED0_1			2
+#define G0_MODE3_O_PWM0_1			3
+
+#define G1_MODE0_IO_GPIO5_GPO21			0
+#define G1_MODE1_IO_SD0_CLK_CMD			1
+#define G1_MODE6_O_USB0_DBG0_6			6
+#define G1_MODE7_O_USB1_DBG0_6			7
+
+#define G2_MODE0_IO_GPIO0_1			0
+#define G2_MODE1_IO_SD0_DAT0_1			1
+#define G2_MODE2_IO_FE_MDIO_MDC			2
+#define G2_MODE3_O_CPUPLL_MEMPLL_CLKO		3
+#define G2_MODE6_O_USB0_DBG1_2			6
+#define G2_MODE7_O_USB1_DBG1_2			7
+
+#define G3_MODE0_IO_GPIO2_3			0
+#define G3_MODE1_IO_SD0_DAT2_3			1
+#define G3_MODE2_IO_TW2_SCL_SDA			2
+#define G3_MODE3_O_AVPLLA_SYSPLL_CLKO		3
+#define G3_MODE4_O_FE_LED0_1			4
+#define G3_MODE6_O_USB0_DBG3_4			6
+#define G3_MODE7_O_USB1_DBG3_4			7
+
+#define G4_MODE0_IO_GPIO4			0
+#define G4_MODE1_I_SD0_CDn			1
+#define G4_MODE2_IO_TW3_SCL			2
+#define G4_MODE3_O_AVPLLB_CLKO			3
+#define G4_MODE4_O_PWM0				4
+#define G4_MODE6_O_USB0_DBG5			6
+#define G4_MODE7_O_USB1_DBG5			7
+
+#define G5_MODE0_IO_GPIO6			0
+#define G5_MODE1_I_SD0_WP			1
+#define G5_MODE2_IO_TW3_SDA			2
+#define G5_MODE3_O_ARC_OUT			3
+#define G5_MODE4_O_PWM1				4
+#define G5_MODE6_O_USB0_DBG7			6
+#define G5_MODE7_O_USB1_DBG7			7
+
+#define G6_MODE0_I_URT0_RXD_TXD			0
+#define G6_MODE1_IO_GPIO15_16			1
+
+#define G7_MODE0_IO_TX_EDDC_SCL_SDA		0
+#define G7_MODE1_IO_TW1_SCL_SDA			1
+#define G7_MODE2_IO_GPIO13_14			2
+
+#define G8_MODE0_O_SPI1_SS0n			0
+#define G8_MODE1_IO_GPIO7			1
+
+#define G9_MODE0_IO_GPIO8_9			0
+#define G9_MODE1_O_SPI1_SS1n_SS2n		1
+#define G9_MODE3_IO_TW0_SCL_SDA			3
+
+#define G10_MODE0_O_SPI1_SCLK			0
+#define G10_MODE1_IO_GPIO10			1
+
+#define G11_MODE0_IO_SPI1_SDI_SDO		0
+#define G11_MODE1_IO_GPIO11_12			1
+
+#define G12_MODE0_O_USB1_DRV_VBUS		0
+#define G12_MODE1_IO_GPO_22			1
+
+#define G13_MODE0_IO_NAND_IO0_7			0
+#define G13_MODE1_O_USB0_DBG8_15		1
+#define G13_MODE2_O_USB1_DBG8_15		2
+
+#define G14_MODE0_O_NAND_WPn			0
+#define G14_MODE1_IO_GPO_20			1
+
+#define G15_MODE0_O_TDO				0
+#define G15_MODE1_IO_GPIO19			1
+
+
+#define	FIXED					0
+#define	VARIOUS					1
+
+/*
+ * pinmux table, Change it based on each board.
+ */
+/*	pinmux group		mode	usage */
+/*	pinmux group attribute:		FIXED:		can not be changed runtime
+ *					VAROIS:		can be change runtime
+ */
+//#define SOC_GROUP0				G0_MODE1_IO_GPIO17_18
+#define SOC_GROUP0				G0_MODE3_O_PWM0_1
+#define	SOC_GROUP0_ATTR				VARIOUS
+
+#define SOC_GROUP1				G1_MODE1_IO_SD0_CLK_CMD
+#define	SOC_GROUP1_ATTR				VARIOUS
+
+#define SOC_GROUP2				G2_MODE1_IO_SD0_DAT0_1
+#define	SOC_GROUP2_ATTR				VARIOUS
+
+#define SOC_GROUP3				G3_MODE1_IO_SD0_DAT2_3
+#define	SOC_GROUP3_ATTR				VARIOUS
+
+#define SOC_GROUP4				G4_MODE0_IO_GPIO4
+#define	SOC_GROUP4_ATTR				VARIOUS
+
+#define SOC_GROUP5				G5_MODE0_IO_GPIO6
+#define	SOC_GROUP5_ATTR				VARIOUS
+
+#define SOC_GROUP6				G6_MODE0_I_URT0_RXD_TXD
+#define	SOC_GROUP6_ATTR				VARIOUS
+
+#define SOC_GROUP7				G7_MODE1_IO_TW1_SCL_SDA
+#define	SOC_GROUP7_ATTR				VARIOUS
+
+#define SOC_GROUP8				G8_MODE0_O_SPI1_SS0n
+#define	SOC_GROUP8_ATTR				VARIOUS
+
+#define SOC_GROUP9				G9_MODE3_IO_TW0_SCL_SDA
+#define	SOC_GROUP9_ATTR				VARIOUS
+
+#define SOC_GROUP10				G10_MODE0_O_SPI1_SCLK
+#define	SOC_GROUP10_ATTR			VARIOUS
+
+#define SOC_GROUP11				G11_MODE0_IO_SPI1_SDI_SDO
+#define	SOC_GROUP11_ATTR			VARIOUS
+
+#define SOC_GROUP12				G12_MODE1_IO_GPO_22
+#define	SOC_GROUP12_ATTR			VARIOUS
+
+#define SOC_GROUP13				G13_MODE0_IO_NAND_IO0_7
+#define	SOC_GROUP13_ATTR			VARIOUS
+
+#define SOC_GROUP14				G14_MODE0_O_NAND_WPn
+#define	SOC_GROUP14_ATTR			VARIOUS
+
+#define SOC_GROUP15				G15_MODE0_O_TDO
+#define	SOC_GROUP15_ATTR			VARIOUS
