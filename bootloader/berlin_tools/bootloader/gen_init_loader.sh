@@ -209,9 +209,15 @@ $ADDHEADER_TOOL $WORKING_DIR/../../berlin_config/${CUST_KEY_IMAGE} key.img || ex
 echo --------------------
 echo     begin padding
 echo --------------------
+
+# add git sha1 at the end of version_tbl.
 dd if=$VT_PATH of=version conv=notrunc && \
 SIZE=`stat -c %s version` && \
 dd if=/dev/urandom of=version bs=1 seek=$SIZE count=`expr 4096 - $SIZE` conv=notrunc && \
+if git diff --exit-code &> /dev/null ; \
+then git rev-parse HEAD | dd of=version bs=1 seek=4056 count=40 conv=notrunc ; \
+else dd if=/dev/urandom of=version bs=1 seek=4056 count=40 conv=notrunc ; \
+fi && \
 SIZE=`stat -c %s figo.img` && \
 dd if=/dev/urandom of=figo.img bs=1 seek=$SIZE count=`expr 4096 - $SIZE` conv=notrunc && \
 SIZE=`stat -c %s key.img` && \

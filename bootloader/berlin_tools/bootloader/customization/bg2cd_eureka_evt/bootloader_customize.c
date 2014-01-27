@@ -221,12 +221,24 @@ void bootloader_customize_initialize_postprocess(unsigned int boot_state)
 		reg_padsel.uPadSelect_SD0_V18EN = Gbl_PadSelect_SD0_V18EN_V1P8;
 		GA_REG_WORD32_WRITE(MEMMAP_CHIP_CTRL_REG_BASE+ RA_Gbl_PadSelect, (reg_padsel.u32));
 	}
+
+	/* ZSP clock */
+	T32Gbl_ClkSwitch ClkSwitch;
+	T32Gbl_clkSelect1 ClkSelect1;
+
+	GA_REG_WORD32_READ((MEMMAP_CHIP_CTRL_REG_BASE + RA_Gbl_ClkSwitch), &(ClkSwitch.u32));
+	GA_REG_WORD32_READ((MEMMAP_CHIP_CTRL_REG_BASE + RA_Gbl_clkSelect1), &(ClkSelect1.u32));
+	ClkSwitch.uClkSwitch_zspClkD3Switch = 0;
+	ClkSwitch.uClkSwitch_zspClkSwitch = 1;
+	ClkSelect1.uclkSelect_zspClkSel = 1;
+	GA_REG_WORD32_WRITE((MEMMAP_CHIP_CTRL_REG_BASE + RA_Gbl_clkSelect1), ClkSelect1.u32);
+	GA_REG_WORD32_WRITE((MEMMAP_CHIP_CTRL_REG_BASE + RA_Gbl_ClkSwitch), ClkSwitch.u32);
 }
 
 void bootloader_customize_load_image_preprocess(unsigned int boot_state)
 {
-	set_led_blacklight(0,10);// channel 0 for white light, duty:0-100
-	set_led_blacklight(1,100);//channel 1 for red light, duty: 0-100
+	set_led_blacklight(0,0);// channel 0 for white light, duty:0-100
+	set_led_blacklight(1,5);//channel 1 for red light, duty: 0-100
 }
 
 void bootloader_customize_load_image_postprocess(unsigned int boot_state)

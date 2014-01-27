@@ -8,7 +8,9 @@
 #include "gicDiag.h"
 #include "pic.h"
 
-#include "logo_data.h"
+#include "normal_logo_data.h"
+#include "error_logo_data.h"
+#include "showlogo.h"
 
 #ifndef bTST
 #define bTST(x, b) (((x) >> (b)) & 1)
@@ -89,14 +91,27 @@ static void showlogo_init_irq(void)
 
 
 static VBUF_INFO vbuf;
-int showlogo_start(void *buf)
+int showlogo_start(void *buf, int error)
 {
     VPP_WIN_ATTR showlogo_attr;
     VPP_WIN showlogo_win;
     void *start;
     unsigned size;
+    int yuv_logo_width, yuv_logo_height, yuv_logo_stride;
+    unsigned char *yuv_logo;
 
-	printf("[SHOWLOGO] start\n");
+    if (error) {
+        yuv_logo_width = error_yuv_logo_width;
+        yuv_logo_height = error_yuv_logo_height;
+        yuv_logo = error_yuv_logo;
+    } else {
+        yuv_logo_width = normal_yuv_logo_width;
+        yuv_logo_height = normal_yuv_logo_height;
+        yuv_logo = normal_yuv_logo;
+    }
+    yuv_logo_stride = yuv_logo_width * 2;
+
+    printf("[SHOWLOGO] start\n");
     logo_isr_count = 0;
     showlogo_init_irq();
 

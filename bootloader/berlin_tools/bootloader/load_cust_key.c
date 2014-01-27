@@ -433,3 +433,188 @@ SIGN32 MV_DRMLIB_Load_Customer_Key(UNSG8* pbCustKeyStore, UNSG32 uKeyStoreSize)
 
   return MV_FIGODRV_OK;
 }
+
+HRESULT MV_Gen_Random_Server(UINT8* pbOutDat, UINT32*uOutSize )
+{
+    HRESULT lRes = S_OK;
+
+	UNSG32 i = 0;
+	UNSG32 uEncImgSize = MEMPOLL_SIZE;
+	SIGN32 nRet = 0;
+	UNSG32 uErrCode = 0;
+	UNSG32 uCheckSize = 1024;
+	UNSG8* pbSrcDDR = NULL;
+	UNSG8* pbDstImg = NULL;
+	SIE_DRMROM_CMD	drmCmd;
+	SIE_DRMROM_CMD	drmRsp;
+	T32SECSTATUS_CFG cfgSecStatus;
+	SIE_DRMDiag_CUSTOMER_KEYSTORE_CTX *pDiagDtcm = NULL;
+	UNSG32 uReady = 0;
+	UNSG32 uRspFlag = 0;
+	UNSG32 uCmdFlag = 0;
+	UNSG32 uErrorCode = 0;
+	UNSG32 uKeyNum = 0;
+	UNSG32 uKeyId = 0;
+	UNSG32 uSize = 0;
+	UNSG32 uOut_data = 0;
+	UNSG8 * pbTemp = NULL;
+
+        UINT8* pbBufAligned32 = NULL;
+        UINT32 uBufSizeAligned32 = (32 + 31)&(~(32-1));
+
+    if((pbOutDat ==NULL) && (uOutSize == NULL) && (*uOutSize == 0))
+    {
+        lRes = MV_FIGODRV_ERR_INVLAID_ARG;
+        printf("invalid lenght of randon number(0)\n");
+        return lRes;
+    }
+    uBufSizeAligned32 = (*uOutSize + 15)&(~(16-1));
+	#if 1
+	{
+		get_figo_img(gp_cust_figo_image);
+	}
+	#endif
+	flush_all_dcache();
+
+	//!Wait FIGO Ready
+	Wait_FIGO();
+	//!Prepare the Image
+	{
+		UNSG8* pbAlloc = NULL;
+		UNSG32	uVSize = MEMPOLL_SIZE;
+		unsigned int i = 0;
+		pbAlloc = (UNSG8*)mempool;
+		pbSrcDDR = (UNSG8*)(ALIGN32(pbAlloc) + 32);
+		pbTemp = pbSrcDDR;
+		for (i = 0; i< uVSize - 64; i = i + 4)
+		{
+			pbTemp = pbSrcDDR + i;
+			*(UNSG32 *)(pbTemp) = 0;
+		}
+	}
+	pbDstImg = pbSrcDDR;
+	{
+		unsigned int i = 0;
+		for (i = 0; i < CUSTK_IMAGE_MAX_SIZE; i++)
+			*(pbDstImg + i) = *((UNSG8*)gp_cust_figo_image + i);
+
+	}
+	//! Init DTCM
+	{
+		int i = 0;
+		SIE_DRMDiag_CUSTOMER_KEYSTORE_CTX* pDiagDtcm = NULL;
+		UNSG32 uSize = 0;
+		pDiagDtcm = (SIE_DRMDiag_CUSTOMER_KEYSTORE_CTX *)(ALIGN32(dtcmpool) + 32);
+		for(i = 0 ; i< sizeof(SIE_DRMDiag_CUSTOMER_KEYSTORE_CTX)/4; i = i+1 )
+			*(((UNSG32*)pDiagDtcm) + i) = 0;
+
+		uSize = sizeof(SIE_DRMDiag_CUSTOMER_KEYSTORE_CTX) - RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_cmdFlag;
+		//lgpl_printf("Before Init the DTCM, the Size = [0x%x]\n", uSize);
+		for ( i = 0; i < uSize/4; i +=1 )
+		{
+			MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_cmdFlag + i*4, 0);
+		}
+	}
+	flush_all_dcache();
+	//Load FIGO Image
+	{
+		int i = 0;
+		for (i = 0; i < sizeof(drmCmd)/8; i = i + 8)
+			*((UNSG64 *)&drmCmd + i) = 0;
+		cfgSecStatus.u32 = MV_FIGODRV_IO_RD32(DRMFIGOREG_SECSTAT);
+		if ( cfgSecStatus.uCFG_flag  != SECSTATUS_CFG_flag_ENABLED )
+		{
+			return MV_FIGODRV_ERR_INVLAID_ARG;
+		}
+		//! Check figo command status
+		drmCmd.u32DRMROM_CMD_STAT = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_STAT);
+		if ( drmCmd.uSTAT_en )
+		{
+			return MV_FIGODRV_ERR_INVLAID_STATUS;
+		}
+
+		drmCmd.uCMD_CFG_tag		= DRMROM_CMD_TYPE_LD_FIGOIMG;
+		drmCmd.uCMD_CFG_nonce	= (UNSG32)0xffffffff;
+
+		drmCmd.uCMD_DAT0_crcCmd32	= 0;
+		drmCmd.uCMD_DAT1_imgSz		= 0;
+		drmCmd.uCMD_DAT2_imgSrcAddr = (UNSG32)pbDstImg;
+		drmCmd.uSTAT_en = 1;
+		//! Issue command
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_CMD_CFG,	drmCmd.u32DRMROM_CMD_CMD_CFG);
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_CMD_DAT0, drmCmd.u32DRMROM_CMD_CMD_DAT0);
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_CMD_DAT1, drmCmd.u32DRMROM_CMD_CMD_DAT1);
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_CMD_DAT2, drmCmd.u32DRMROM_CMD_CMD_DAT2);
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_CMD_DAT3, drmCmd.u32DRMROM_CMD_CMD_DAT3);
+
+		MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_STAT,		drmCmd.u32DRMROM_CMD_STAT);
+		//! Check figo command status
+		while(1)
+		{
+			drmRsp.u32DRMROM_CMD_STAT = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_STAT);
+			if ( drmRsp.uSTAT_en )
+			{
+				continue;
+			}
+			break;
+		}
+		//! Load Reponse
+		drmRsp.u32DRMROM_CMD_RSP_CFG = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_RSP_CFG);
+		drmRsp.u32DRMROM_CMD_RSP_DAT0 = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_RSP_DAT0);
+		drmRsp.u32DRMROM_CMD_RSP_DAT1 = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMROM_CMD_RSP_DAT1);
+
+		if ( drmRsp.uRSP_CFG_tag != DRMROM_CMD_TYPE_LD_FIGOIMG)
+		{
+			return MV_FIGODRV_ERR;
+		}
+		//!Todo verify crc32 value with nonce
+		uErrorCode = drmRsp.uRSP_DAT1_error;
+		if (0 != uErrorCode)
+			return MV_FIGODRV_ERR;
+
+	}
+	flush_all_dcache();
+	// Load the customer keystore into DTCM
+	{
+		UNSG32 uAESKeyCnt = 0;
+		UNSG32 uRSAPubKeyCnt = 0;
+		UNSG32 uRSAPrvKeyCnt = 0;
+		UNSG32 j = 0;
+		//for(i =0; i< uKeyNum; i++)
+		{
+			uKeyId = uBufSizeAligned32;		//! First Word is Key ID
+
+			do{
+				uRspFlag = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_rspFlag);
+				uRspFlag = uRspFlag & 0xffff;
+				MV_FIGODRV_SLEEP(1000);
+			} while (uRspFlag != 0x3010);
+			// Send Command to FIOG image
+			{
+				MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_uKeyId, uKeyId);
+				uCmdFlag = 0xbf;
+				MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_cmdFlag, uCmdFlag);
+			}
+		}
+	}
+	do{
+		uRspFlag = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_rspFlag);
+		uRspFlag = uRspFlag & 0xffff;
+		MV_FIGODRV_SLEEP(1000);
+	} while (uRspFlag != 0x88de);
+	for ( i = 0; i < uBufSizeAligned32/4; i +=1 )
+	{
+		uOut_data = MV_FIGODRV_IO_RD32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_custKeystore + i*4);
+		memcpy(((UINT8 *)pDiagDtcm->ie_custKeystore + i*4), &uOut_data, sizeof(uOut_data));
+	}
+	memcpy(pbOutDat, pDiagDtcm->ie_custKeystore, *uOutSize);
+//	uCmdFlag = 0xf3;
+//	MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_cmdFlag, uCmdFlag);
+
+	uCmdFlag = 0xde;
+	MV_FIGODRV_IO_WR32(DRMFIGOREG_CMDSTAT + RA_DRMDiag_CUSTOMER_KEYSTORE_CTX_cmdFlag, uCmdFlag);
+	// Wait Figo ROM code ready
+	Wait_FIGO();
+
+	return MV_FIGODRV_OK;
+}

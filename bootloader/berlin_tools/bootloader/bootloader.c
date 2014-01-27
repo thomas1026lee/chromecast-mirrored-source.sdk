@@ -29,6 +29,7 @@
 #include "thinvpp_api.h"
 #include "avpll.h"
 #include "api_avio_dhub.h"
+#include "showlogo.h"
 #endif
 
 #include "nand_block0_layout_A0.h"
@@ -110,6 +111,8 @@
 #endif
 
 #define MAX_RAMDISK_IMPLICT_SIZE	(0x2000000)
+
+#define PRNG_DATA_SIZE 64
 
 enum sm_ldo_ctrl_vout_sel_e {
 
@@ -308,6 +311,37 @@ static int board_gpio_init(void)
 	return 0;
 #endif
 	return 1;
+}
+
+static void prng_init(char *kernel_param)
+{
+extern  HRESULT MV_Gen_Random_Server(UINT8* pbOutDat, UINT32*uOutSize );
+	UINT8 rand_buf[PRNG_DATA_SIZE];
+	UINT32 rand_size = sizeof(rand_buf);
+	if (MV_Gen_Random_Server(rand_buf, &rand_size)) {
+		lgpl_printf("ERROR: failed to generate random data.\n");
+		return;
+	}
+
+	// Append 64 bytes (128-bytes in hex) to kernel command line "prng_data=".
+	strcat(kernel_param, " prng_data=");
+	int i;
+	for (i = 0; i < sizeof(rand_buf); ++i) {
+		char tmp[3] = {0};
+		sprintf(tmp, "%02x", rand_buf[i]);
+		strcat(kernel_param, tmp);
+	}
+
+	// Display random bits.
+	debug_printf("PRNG bytes\n");
+	for (i = 0; i < sizeof(rand_buf); i += 16) {
+		int j = 0;
+		debug_printf("\t");
+		for (j = 0; j < 16; ++j) {
+			debug_printf("%02x", rand_buf[i + j]);
+		}
+		debug_printf("\n");
+	}
 }
 
 /* get button status
@@ -924,6 +958,8 @@ void setup_android_kernel_param(int boot_mode)
 		strcat(kernel_param, " sd8787.fw_name=mrvl/sd8787_mfg.bin");
 	}
 #endif //CFG_BOARD_NAME
+
+	prng_init(kernel_param);
 
 	setup_linux_bootparam_with_ramdisk(Mkbootimg_hdr.kernel_addr - 0x8000,
 									   MEMORY_SIZE - Mkbootimg_hdr.kernel_addr,
@@ -2579,7 +2615,7 @@ void StartBootLoader(int block_size, int page_size, int addr_cycle)
                 MV_THINVPP_SetCPCBOutputResolution(CPCB_3, RES_NTSC_M, OUTPUT_BIT_DEPTH_8BIT);
 #endif // (BERLIN_CHIP_VERSION != BERLIN_BG2CD_A0)
 #if BOOTLOADER_SHOWLOGO
-                showlogo_start((void *)LOGO_FRM_BUF);
+                showlogo_start((void *)LOGO_FRM_BUF, 0);
 #endif //BOOTLOADER_SHOWLOGO
                 printf("\n[FASTLOGO] done.\n");
                 break;
@@ -2640,6 +2676,7 @@ void StartBootLoader(int block_size, int page_size, int addr_cycle)
 		if(Image_Load_And_Start())
 		{
 			lgpl_printf("tbdzz---- Img_Ld_And_Start error! Spinning now!\n");
+			showlogo_start((void *)LOGO_FRM_BUF, 1);
 			while(1);
 		}
 
