@@ -230,6 +230,7 @@ extern char gp_cust_figo_image[];
 extern int MV_DRMLIB_Load_Customer_Key( char *, int);
 extern int lgpl_printf(const char *format, ...);
 
+inline char itoc(char i);
 
 HRESULT MV_SM_Dev_Init(UCHAR * pucData_Buffer,UINT32 uiData_Size);
 
@@ -889,10 +890,32 @@ void make_android_macaddr(char *mac_addr_buf)
 		strcpy(mac_addr_buf, mac_addr);
 }
 
+// Set mac address for 8801.
+static void make_wifi_macaddr(char *wifi_mac_addr_buf)
+{
+	long chipid_reg1;
+	char *p;
+	int i;
+
+	// Use lowest 24 bit from chip ID.
+	chipid_reg1 = readl(MV88DE3100_CHIPID_REG1) ;
+	strcpy(wifi_mac_addr_buf, "sd8801.mac_addr=F8:8F:CA");
+	p = wifi_mac_addr_buf + strlen(wifi_mac_addr_buf);
+
+	for(i = 0;i < 3; ++i) {
+		char hex;
+		hex = chipid_reg1 >> (16 - 8 * i);
+		*p++ = ':';
+		*p++ = itoc(hex>>4);
+		*p++ = itoc(hex);
+	}
+	*p = '\0';
+}
+
 void setup_android_kernel_param(int boot_mode)
 {
 	char kernel_param[1024];
-	char mac_addr[32];
+	char mac_addr[32], wifi_mac_addr[64] = {0};
 	char tmp_buf[256];
 
 	make_android_macaddr(mac_addr);
@@ -956,6 +979,16 @@ void setup_android_kernel_param(int boot_mode)
 	if ((boot_mode == BOOTMODE_NORMAL) && !strcmp("1", tmp_buf)) {
 		strcat(kernel_param, " sd8787.mfg_mode=1 sd8787.drv_mode=1");
 		strcat(kernel_param, " sd8787.fw_name=mrvl/sd8787_mfg.bin");
+		strcat(kernel_param, " sd8801.mfg_mode=1 sd8801.drv_mode=1");
+		strcat(kernel_param, " sd8801.fw_name=mrvl/sd8801_mfg.bin");
+	} else {
+		// Set MAC address only in non-MFG mode.
+		make_wifi_macaddr(wifi_mac_addr);
+		strcat(kernel_param, " ");
+		strcat(kernel_param, wifi_mac_addr);
+
+		// Set calibration config file.
+		strcat(kernel_param, " sd8801.cal_data_cfg=mrvl/WlanCalData_sd8801.conf");
 	}
 #endif //CFG_BOARD_NAME
 
