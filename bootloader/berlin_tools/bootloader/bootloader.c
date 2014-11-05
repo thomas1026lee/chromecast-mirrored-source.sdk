@@ -658,13 +658,16 @@ static int load_android_image(int bootmode, int boot_src)
 	unsigned int cpu_img_siz = 0;
 	unsigned int sign_kidx, par_kidx;
 	int usb_stor_cnt;
-	static char cpu_img_hdr[USB_BLOCK_SIZ];
 
 	/* Use memory near the end of DDR for loading
 	 * Android image for verification. Bootloader has
 	 * configured MMU for flat memory map, i.e. VA == PA.
 	 */
 	k_buff = (char *)ANDROID_IMG_BUF;
+
+	/* Wipe the scratch memory first to make sure nothing */
+	/* is present from the last boot attempt. */
+	memset(k_buff, 0, MAX_ANDROID_IMG_SIZE);
 
 	if (boot_src == BOOT_SRC_USB){
 #ifdef CONFIG_USB
@@ -681,7 +684,7 @@ static int load_android_image(int bootmode, int boot_src)
 			return -1;
 		}
 		/* Read from first USB device */
-		if(usb_stor_read(0, android_start, 1, cpu_img_hdr) != 1){
+		if(usb_stor_read(0, android_start, 1, k_buff) != 1){
 			lgpl_printf("ERROR: Failed to read CPU image header from USB \n");
 			return -1;
 		}
@@ -708,14 +711,14 @@ static int load_android_image(int bootmode, int boot_src)
 		/* Read CPU image header to determing length of the image */
 		ret = nand_read_generic(android_start,
 								android_end,
-								cpu_img_hdr, sizeof(cpu_img_hdr));
+								k_buff, USB_BLOCK_SIZ);
 		if (ret < 0){
 			debug_printf("NAND: Failed to read CPU image header!\n");
 			return -1;
 		}
 	}
 
-	cpu_img_siz = *((unsigned int *)(cpu_img_hdr + CPU_IMG_OFFS_IMGSIZ));
+	cpu_img_siz = *((unsigned int *)(k_buff + CPU_IMG_OFFS_IMGSIZ));
 	cpu_img_siz = get_aligned(cpu_img_siz, 16);
 	cpu_img_siz += CPU_IMG_OFFS_IMGSTA;
 	/* Add min size check to be safe */
@@ -724,10 +727,6 @@ static int load_android_image(int bootmode, int boot_src)
 					 cpu_img_siz);
 		return -1;
 	}
-
-	/* Wipe the scratch memory first to make sure nothing */
-	/* is present from the last boot attempt. */
-	memset(k_buff, 0, MAX_ANDROID_IMG_SIZE);
 
 	if (boot_src == BOOT_SRC_USB){
 #ifdef CONFIG_USB
@@ -746,10 +745,6 @@ static int load_android_image(int bootmode, int boot_src)
 		  return -1;
 		}
 #endif //CFG_BOARD_NAME
-
-		/* Avoid re-reading the first block to prevent */
-		/* security hacks */
-		memcpy(k_buff, cpu_img_hdr, sizeof(cpu_img_hdr));
 
 		blk_cnt = (cpu_img_siz + USB_BLOCK_SIZ - 1)/USB_BLOCK_SIZ;
 		/* Always read from first USB storage device */
